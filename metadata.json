@@ -1,0 +1,6 @@
+{
+  "name": "GWB-1",
+  "description": "GWB-1 (GirlWorldButterfly-1) is a colorful, child-friendly 3D open-world adventure featuring woodland friends, butterfly discovery, mini-games, quests, and safe multiplayer exploration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

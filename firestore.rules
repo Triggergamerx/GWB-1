@@ -1,0 +1,214 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Reusable Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidAvatar(avatarId) {
+      return avatarId in ['maya', 'pinky', 'barnaby', 'blossom'];
+    }
+
+    function isValidBiome(biomeTheme) {
+      return biomeTheme in ['meadow', 'cottage', 'river', 'treehouse', 'starlight'];
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidExplorerProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 30 &&
+             isValidAvatar(data.avatarId) &&
+             data.stars is int && data.stars >= 0 && data.stars <= 1000000 &&
+             data.butterfliesCaught is int && data.butterfliesCaught >= 0 && data.butterfliesCaught <= 100000 &&
+             data.discoveredIds is list && data.discoveredIds.size() <= 30 &&
+             (data.discoveredIds.size() == 0 || data.discoveredIds[0] is string) &&
+             data.activeQuestId is string && data.activeQuestId.size() >= 1 && data.activeQuestId.size() <= 40 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidQuestProgress(data) {
+      return data.questId is string && data.questId.size() >= 1 && data.questId.size() <= 40 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 60 &&
+             data.targetCount is int && data.targetCount >= 1 && data.targetCount <= 100 &&
+             data.currentCount is int && data.currentCount >= 0 && data.currentCount <= 100 &&
+             data.completed is bool &&
+             data.rewardStars is int && data.rewardStars >= 1 && data.rewardStars <= 500 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidMeadowRoom(data) {
+      return data.roomCode is string && data.roomCode.size() >= 1 && data.roomCode.size() <= 24 &&
+             data.roomName is string && data.roomName.size() >= 1 && data.roomName.size() <= 40 &&
+             data.hostUid is string && data.hostUid.size() >= 1 && data.hostUid.size() <= 128 &&
+             isValidBiome(data.biomeTheme) &&
+             data.openForFriends is bool &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 8 &&
+             data.memberUids[0] is string &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidRoomPlayer(data) {
+      return data.roomId is string && data.roomId.size() >= 1 && data.roomId.size() <= 24 &&
+             data.playerUid is string && data.playerUid.size() >= 1 && data.playerUid.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 30 &&
+             isValidAvatar(data.avatarId) &&
+             data.posX is number && data.posX >= -200 && data.posX <= 200 &&
+             data.posZ is number && data.posZ >= -200 && data.posZ <= 200 &&
+             data.yaw is number && data.yaw >= -360 && data.yaw <= 360 &&
+             data.emote is string && data.emote.size() <= 24 &&
+             data.emote in ['', 'wave', 'butterfly', 'heart', 'picnic', 'dance'] &&
+             data.roomOpen is bool &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 8 &&
+             data.memberUids[0] is string &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 4. Owner-Isolated Explorer Profiles & Quests
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'avatarId', 'stars', 'butterfliesCaught', 'discoveredIds', 'activeQuestId', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'avatarId', 'stars', 'butterfliesCaught', 'discoveredIds', 'activeQuestId', 'createdAt', 'updatedAt']) &&
+                       isValidExplorerProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidExplorerProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'avatarId', 'stars', 'butterfliesCaught', 'discoveredIds', 'activeQuestId', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+
+      match /quests/{questId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(questId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(questId) &&
+                         request.auth.uid == userId &&
+                         incoming().questId == questId &&
+                         incoming().keys().hasAll(['questId', 'title', 'targetCount', 'currentCount', 'completed', 'rewardStars', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['questId', 'title', 'targetCount', 'currentCount', 'completed', 'rewardStars', 'createdAt', 'updatedAt']) &&
+                         isValidQuestProgress(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(questId) &&
+                         request.auth.uid == userId &&
+                         isValidQuestProgress(incoming()) &&
+                         !existing().completed &&
+                         incoming().questId == existing().questId &&
+                         incoming().title == existing().title &&
+                         incoming().targetCount == existing().targetCount &&
+                         incoming().rewardStars == existing().rewardStars &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['currentCount', 'completed', 'updatedAt']);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(questId) && request.auth.uid == userId;
+      }
+    }
+
+    // 5. Safe Multiplayer Meadow Rooms & Real-Time Players
+    match /meadowRooms/{roomId} {
+      allow get: if isSignedIn() && isValidId(roomId);
+      allow list: if isSignedIn() && (request.auth.uid in resource.data.memberUids || resource.data.openForFriends == true);
+
+      allow create: if isSignedIn() &&
+                       isValidId(roomId) &&
+                       incoming().roomCode == roomId &&
+                       incoming().hostUid == request.auth.uid &&
+                       request.auth.uid in incoming().memberUids &&
+                       incoming().keys().hasAll(['roomCode', 'roomName', 'hostUid', 'biomeTheme', 'openForFriends', 'memberUids', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['roomCode', 'roomName', 'hostUid', 'biomeTheme', 'openForFriends', 'memberUids', 'createdAt', 'updatedAt']) &&
+                       isValidMeadowRoom(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(roomId) &&
+                       isValidMeadowRoom(incoming()) &&
+                       incoming().roomCode == existing().roomCode &&
+                       incoming().hostUid == existing().hostUid &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         // Action 1: Self join/leave memberUids
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'updatedAt']) &&
+                           (existing().openForFriends == true || request.auth.uid in existing().memberUids || request.auth.uid in incoming().memberUids) &&
+                           incoming().memberUids.hasAll(existing().memberUids.removeAll([request.auth.uid])) &&
+                           existing().memberUids.hasAll(incoming().memberUids.removeAll([request.auth.uid]))
+                         ) ||
+                         // Action 2: Host settings update
+                         (
+                           existing().hostUid == request.auth.uid &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['roomName', 'biomeTheme', 'openForFriends', 'updatedAt'])
+                         )
+                       );
+
+      allow delete: if isSignedIn() && isValidId(roomId) && existing().hostUid == request.auth.uid;
+
+      match /players/{playerUid} {
+        allow get: if isSignedIn() &&
+                      isValidId(roomId) &&
+                      isValidId(playerUid) &&
+                      (request.auth.uid == playerUid || request.auth.uid in resource.data.memberUids || resource.data.roomOpen == true);
+
+        allow list: if isSignedIn() &&
+                       (request.auth.uid in resource.data.memberUids || resource.data.roomOpen == true);
+
+        allow create: if isSignedIn() &&
+                         isValidId(roomId) &&
+                         isValidId(playerUid) &&
+                         request.auth.uid == playerUid &&
+                         incoming().roomId == roomId &&
+                         incoming().playerUid == playerUid &&
+                         incoming().keys().hasAll(['roomId', 'playerUid', 'displayName', 'avatarId', 'posX', 'posZ', 'yaw', 'emote', 'roomOpen', 'memberUids', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['roomId', 'playerUid', 'displayName', 'avatarId', 'posX', 'posZ', 'yaw', 'emote', 'roomOpen', 'memberUids', 'createdAt', 'updatedAt']) &&
+                         isValidRoomPlayer(incoming()) &&
+                         exists(/databases/$(database)/documents/meadowRooms/$(roomId)) &&
+                         request.auth.uid in get(/databases/$(database)/documents/meadowRooms/$(roomId)).data.memberUids;
+
+        allow update: if isSignedIn() &&
+                         isValidId(roomId) &&
+                         isValidId(playerUid) &&
+                         request.auth.uid == playerUid &&
+                         isValidRoomPlayer(incoming()) &&
+                         incoming().roomId == existing().roomId &&
+                         incoming().playerUid == existing().playerUid &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'avatarId', 'posX', 'posZ', 'yaw', 'emote', 'roomOpen', 'memberUids', 'updatedAt']);
+
+        allow delete: if isSignedIn() && isValidId(roomId) && isValidId(playerUid) && request.auth.uid == playerUid;
+      }
+    }
+  }
+}

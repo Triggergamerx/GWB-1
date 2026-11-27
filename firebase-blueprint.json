@@ -1,0 +1,262 @@
+{
+  "entities": {
+    "ExplorerProfile": {
+      "title": "ExplorerProfile",
+      "description": "Authenticated young explorer's saved profile, avatar choice, star rewards, and flora/fauna discoveries.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Kid-friendly explorer nickname."
+        },
+        "avatarId": {
+          "type": "string",
+          "enum": ["maya", "pinky", "barnaby", "blossom"],
+          "description": "Chosen 3D character style in the open world."
+        },
+        "stars": {
+          "type": "integer",
+          "description": "Total golden stars earned from quests and mini-games."
+        },
+        "butterfliesCaught": {
+          "type": "integer",
+          "description": "Total butterflies befriended across the meadow and mini-games."
+        },
+        "discoveredIds": {
+          "type": "array",
+          "description": "List of unlocked flora and fauna encyclopedia IDs (max 30)."
+        },
+        "activeQuestId": {
+          "type": "string",
+          "description": "Currently highlighted quest identifier."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp()) when profile was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp()) when profile was last updated."
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "avatarId",
+        "stars",
+        "butterfliesCaught",
+        "discoveredIds",
+        "activeQuestId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "QuestProgress": {
+      "title": "QuestProgress",
+      "description": "Per-user quest progress stored under /users/{userId}/quests/{questId}.",
+      "type": "object",
+      "properties": {
+        "questId": {
+          "type": "string",
+          "description": "Quest identifier matching document ID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Child-friendly quest title."
+        },
+        "targetCount": {
+          "type": "integer",
+          "description": "Target steps required to finish the quest."
+        },
+        "currentCount": {
+          "type": "integer",
+          "description": "Current progress count."
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Whether the quest has been completed."
+        },
+        "rewardStars": {
+          "type": "integer",
+          "description": "Stars awarded upon completion."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp()) on creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp()) on update."
+        }
+      },
+      "required": [
+        "questId",
+        "title",
+        "targetCount",
+        "currentCount",
+        "completed",
+        "rewardStars",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MeadowRoom": {
+      "title": "MeadowRoom",
+      "description": "Safe multiplayer meadow room where friends can explore the 3D world together.",
+      "type": "object",
+      "properties": {
+        "roomCode": {
+          "type": "string",
+          "description": "Unique room code matching document ID."
+        },
+        "roomName": {
+          "type": "string",
+          "description": "Friendly meadow room name."
+        },
+        "hostUid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the room creator."
+        },
+        "biomeTheme": {
+          "type": "string",
+          "enum": ["meadow", "cottage", "river", "treehouse", "starlight"],
+          "description": "Featured starting biome for the room."
+        },
+        "openForFriends": {
+          "type": "boolean",
+          "description": "Whether the room appears in the cozy open meadow directory."
+        },
+        "memberUids": {
+          "type": "array",
+          "description": "Bounded list (max 8) of participant UIDs."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp()) on creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp()) on update."
+        }
+      },
+      "required": [
+        "roomCode",
+        "roomName",
+        "hostUid",
+        "biomeTheme",
+        "openForFriends",
+        "memberUids",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RoomPlayer": {
+      "title": "RoomPlayer",
+      "description": "Real-time 3D position, orientation, avatar, and safe preset emote for a player in a multiplayer room.",
+      "type": "object",
+      "properties": {
+        "roomId": {
+          "type": "string",
+          "description": "Parent room ID."
+        },
+        "playerUid": {
+          "type": "string",
+          "description": "Player Firebase Auth UID matching document ID."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Player's display nickname."
+        },
+        "avatarId": {
+          "type": "string",
+          "enum": ["maya", "pinky", "barnaby", "blossom"],
+          "description": "Player's 3D character avatar."
+        },
+        "posX": {
+          "type": "number",
+          "description": "World X coordinate."
+        },
+        "posZ": {
+          "type": "number",
+          "description": "World Z coordinate."
+        },
+        "yaw": {
+          "type": "number",
+          "description": "Character facing yaw angle in degrees."
+        },
+        "emote": {
+          "type": "string",
+          "description": "Safe preset emote identifier."
+        },
+        "roomOpen": {
+          "type": "boolean",
+          "description": "Denormalized openForFriends flag from parent room."
+        },
+        "memberUids": {
+          "type": "array",
+          "description": "Denormalized participant UIDs from parent room for zero-lookup list evaluation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp()) on creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp()) on update."
+        }
+      },
+      "required": [
+        "roomId",
+        "playerUid",
+        "displayName",
+        "avatarId",
+        "posX",
+        "posZ",
+        "yaw",
+        "emote",
+        "roomOpen",
+        "memberUids",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/ExplorerProfile"
+      },
+      "description": "Owner-isolated explorer profile, rewards, and discovery collection."
+    },
+    "/users/{userId}/quests/{questId}": {
+      "schema": {
+        "$ref": "#/entities/QuestProgress"
+      },
+      "description": "Owner-isolated quest progress subcollection."
+    },
+    "/meadowRooms/{roomId}": {
+      "schema": {
+        "$ref": "#/entities/MeadowRoom"
+      },
+      "description": "Safe multiplayer meadow rooms for friends."
+    },
+    "/meadowRooms/{roomId}/players/{playerUid}": {
+      "schema": {
+        "$ref": "#/entities/RoomPlayer"
+      },
+      "description": "Real-time 3D player state inside a multiplayer meadow room."
+    }
+  }
+}

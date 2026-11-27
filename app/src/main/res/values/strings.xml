@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">GWB-1</string>
+    <string name="app_full_name">GirlWorldButterfly-1</string>
+    <string name="app_version_label">Version 10.1alphacutegirl</string>
+    <string name="sign_in_title">Welcome to GWB-1</string>
+    <string name="sign_in_subtitle">GirlWorldButterfly-1: Explore a sunny 3D woodland with Maya, Barnaby Bear, and Pinky Butterfly!</string>
+    <string name="sign_in_button">Sign in with Google</string>
+    <string name="signing_in">Opening Meadow Gate…</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="world_hud_stars">Stars</string>
+    <string name="world_hud_butterflies">Butterflies</string>
+    <string name="btn_jump">Jump</string>
+    <string name="btn_catch">Sparkle Net</string>
+    <string name="btn_bear_boost">Bear Boost</string>
+    <string name="btn_map">World Map</string>
+    <string name="btn_quests">Quests</string>
+    <string name="btn_almanac">Nature Book</string>
+    <string name="btn_friends">Friends</string>
+    <string name="btn_games">Mini-Games</string>
+    <string name="btn_wardrobe">Dress Up</string>
+</resources>
