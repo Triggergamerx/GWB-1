@@ -52,16 +52,19 @@ jobs:
       - name: Build Debug APK
         run: gradle :app:assembleDebug --no-daemon --stacktrace
 
-      - name: Stage APK for Release
+      - name: Stage APK and Archive for Release
         run: |
-          ls -lh app/build/outputs/apk/debug/
-          cp app/build/outputs/apk/debug/app-debug.apk GWB-1-10.1alphacutegirl-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk debug.apk
+          tar -czf debug.tar.gz debug.apk
+          ls -lh debug.apk debug.tar.gz
 
       - name: Upload APK Workflow Artifact
         uses: actions/upload-artifact@v4
         with:
           name: GWB-1-debug-apk
-          path: GWB-1-10.1alphacutegirl-debug.apk
+          path: |
+            debug.apk
+            debug.tar.gz
 
       - name: Publish APK to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -72,6 +75,7 @@ jobs:
           make_latest: true
           fail_on_unmatched_files: true
           files: |
-            GWB-1-10.1alphacutegirl-debug.apk
+            debug.apk
+            debug.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
